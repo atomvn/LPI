@@ -1,0 +1,118 @@
+3.4 Handling Errors from System Calls and Library Functions
+Almost every system call and library function returns some type of status value indi-
+cating whether the call succeeded or failed. This status value should always be
+
+checked to see whether the call succeeded. If it did not, then appropriate action
+should be taken—at the very least, the program should display an error message
+warning that something unexpected occurred.
+
+Although it is tempting to save typing time by excluding these checks (espe-
+cially after seeing examples of UNIX and Linux programs where status values are
+
+not checked), it is a false economy. Many hours of debugging time can be wasted
+because a check was not made on the status return of a system call or library function
+that “couldn’t possibly fail.”
+
+A few system calls never fail. For example, getpid() always successfully returns
+the ID of a process, and _exit() always terminates a process. It is not necessary
+to check the return values from such system calls.
+
+Handling system call errors
+The manual page for each system call documents the possible return values of the
+call, showing which value(s) indicate an error. Usually, an error is indicated by a
+return of –1. Thus, a system call can be checked with code such as the following:
+fd = open(pathname, flags, mode); /* system call to open a file */
+if (fd == -1) {
+/* Code to handle the error */
+}
+...
+#include <gnu/libc-version.h>
+const char *gnu_get_libc_version(void);
+
+Returns pointer to null-terminated, statically allocated string
+containing GNU C library version number
+
+System Programming Concepts 49
+
+if (close(fd) == -1) {
+/* Code to handle the error */
+}
+When a system call fails, it sets the global integer variable errno to a positive value
+
+that identifies the specific error. Including the <errno.h> header file provides a dec-
+laration of errno, as well as a set of constants for the various error numbers. All of
+
+these symbolic names commence with E. The section headed ERRORS in each manual
+page provides a list of possible errno values that can be returned by each system call.
+Here is a simple example of the use of errno to diagnose a system call error:
+cnt = read(fd, buf, numbytes);
+if (cnt == -1) {
+if (errno == EINTR)
+fprintf(stderr, "read was interrupted by a signal\n");
+else {
+/* Some other error occurred */
+}
+}
+Successful system calls and library functions never reset errno to 0, so this variable
+
+may have a nonzero value as a consequence of an error from a previous call. Further-
+more, SUSv3 permits a successful function call to set errno to a nonzero value
+
+(although few functions do this). Therefore, when checking for an error, we should
+always first check if the function return value indicates an error, and only then
+examine errno to determine the cause of the error.
+A few system calls (e.g., getpriority()) can legitimately return –1 on success. To
+determine whether an error occurs in such calls, we set errno to 0 before the call,
+and then check it afterward. If the call returns –1 and errno is nonzero, an error
+occurred. (A similar statement also applies to a few library functions.)
+
+A common course of action after a failed system call is to print an error mes-
+sage based on the errno value. The perror() and strerror() library functions are pro-
+vided for this purpose.
+
+The perror() function prints the string pointed to by its msg argument, followed
+by a message corresponding to the current value of errno.
+
+A simple way of handling errors from system calls would be as follows:
+fd = open(pathname, flags, mode);
+if (fd == -1) {
+perror("open");
+exit(EXIT_FAILURE);
+}
+The strerror() function returns the error string corresponding to the error number
+given in its errnum argument.
+#include <stdio.h>
+void perror(const char *msg);
+
+50 Chapter 3
+The string returned by strerror() may be statically allocated, which means that it
+could be overwritten by subsequent calls to strerror().
+If errnum specifies an unrecognized error number, strerror() returns a string of
+the form Unknown error nnn. On some other implementations, strerror() instead
+returns NULL in this case.
+Because perror() and strerror() functions are locale-sensitive (Section 10.4), error
+descriptions are displayed in the local language.
+Handling errors from library functions
+The various library functions return different data types and different values to
+indicate failure. (Check the manual page for each function.) For our purposes,
+library functions can be divided into the following categories:
+
+z Some library functions return error information in exactly the same way as sys-
+tem calls: a –1 return value, with errno indicating the specific error. An example
+
+of such a function is remove(), which removes a file (using the unlink() system
+call) or a directory (using the rmdir() system call). Errors from these functions
+can be diagnosed in the same way as errors from system calls.
+z Some library functions return a value other than –1 on error, but nevertheless
+set errno to indicate the specific error condition. For example, fopen() returns a
+
+NULL pointer on error, and the setting of errno depends on which underlying sys-
+tem call failed. The perror() and strerror() functions can be used to diagnose
+
+these errors.
+z Other library functions don’t use errno at all. The method for determining the
+
+existence and cause of errors depends on the particular function and is docu-
+mented in the function’s manual page. For these functions, it is a mistake to
+
+use errno, perror(), or strerror() to diagnose errors.
