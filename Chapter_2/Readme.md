@@ -22,8 +22,8 @@ A shell-command interpreter is a special-purpose program designed to read comman
 Each user on the system is uniquely identified, and users may belong to groups.
 **Users**
 Several features of a user are stored in /etc/passwd file: login name, user ID (UID), group ID (UID), home directory, login shell.
-For security reasons, the password is often stored in the separate shadow password file, which is only readable by privileged users.
+For security reasons, the password is often stored in the separate shadow password file, which is only readable by privileged users.  
 **Groups**
-Several features of a group are stored in /etc/group: group name, group ID, user list...
+Several features of a group are stored in /etc/group: group name, group ID, user list...  
 **Superuser**
-Superuser has user ID 0, normally has the login name root.
+Superuser has user ID 0, normally has the login name root.  
