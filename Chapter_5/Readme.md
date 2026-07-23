@@ -79,3 +79,64 @@ struct iovec {
 <img src="../asset/Chapter_5/scatter_gather_IO.png" alt="fd" width="400" height="200">
 </p>
 
+## 5.8. Truncating a file: truncate() and ftruncate()
+```
+#include <unistd.h>
+int truncate(const char* pathname, off_t length);
+int ftruncate(int fd, off_t length);
+    Both return 0 on suceess, or -1 on error
+```
+If the file is longer than length, the excess data is lost. If the file is currently shorter than length, it is extended by padding with a sequence of null bytes or a hole.
+
+## 5.9. Nonblocking I/O
+Specifying the O_NONBLOCK flag when opening a file.
+
+## 5.10. I/O on large files
+We can write applications requiring LFS functionality in one of two ways:
+- Use an alternative API (open64, lseek64) that supports large files.
+- Define the _FILE_OFFSET_BITS macro with the value 64 when compiling our programs.
+
+**Passing off_t values to printf()**
+```
+#define _FILE_OFFSET_BITS 64
+off_t offset;
+printf("offset=%lld\n", (long long) offset);
+```
+
+## 5.11. The /dev/fd directory
+For each process, the kernel provides the special virtual directory /dev/fd. This directory contains filenames of the form /dev/fd/n, where n is the number corresponding to one of the open file descriptors for the process.
+Opening one of the files in the /dev/fd directory is equivalent to duplicating the corresponding file descriptors. 
+```
+// 2 following calls are equivalent
+fd = open("dev/fd/1", O_WRONLY); 
+fd = dup(1);
+```
+
+## 5.12. Creating temporary files
+The GNU C library provides a range of library functions for creating temporary files, two of them are: mkstemp() and tmpfile().
+```
+#include <stdlib.h>
+int mkstemp(caht *template);
+Return file descriptor on success, or -1 on error.
+```
+The mkstemp() function generates a unique filename based on a template supplied by the caller and opens the file, returning a file descriptor that can be used with I/O system calls.  
+The template argument takes the form of a pathname in which the last 6 characters must be XXXXXX. These 6 characters are replaced with a string that makes the filename unique.  
+Example using mkstemp():
+```
+int fd;
+char template[] = "/tmp/somestringXXXXXX";
+fd = mkstemp(template);
+if (fd == -1)
+    errExit("mkstemp");
+printf("Generated filename was: %s\n", template);
+unlink(template); // Name disappears immediately but the file is removed only after close
+/* Use file I/O system calls - read(), write(), and so on */
+if (close(fd) == -1)
+    errExit("close");
+
+```
+#include <stdio.h>
+FILE *tmpfile(void);
+Return file pointer on success, or NULL on error
+```
+The tmpfile() function creates a uniquely named temporary file that is opened for reading and writing.
