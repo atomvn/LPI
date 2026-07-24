@@ -75,3 +75,31 @@ Output:
 [13:41:01] wait() returned child PID 21835 (numDead =3)
 No more children - bye!
 ```
+
+### 26.1.2. The waitpid() system call
+```
+#include <sys/wait.h>
+pid_t waitpid(pid_t pid, int *status, int options);
+Return process ID of child, 0, or -1 on error
+```
+The return value and status arguments of waitpid() are the same as for wait(). The pid argument enables the selection of the child to be waited for, as follows:
+- If pid is greater than 0, wait for the child whose process ID equals pid.
+- If pid equals 0, wait for any child in the same process group as the caller.
+- If pid is less than -1, wait for any child whose process group identifier equals the absolute value of pid.
+- If pid equals -1, wait for any child. The call wait(status) is equivalent to the call wait(-1, status, 0).  
+
+The options argument is a bit mask that can include (OR) zero or more of the following flags:
+- WUNTRACED: In addition to returning information about terminated children, also return information when a child is stopped by a signal.
+- WCONTINUED: Also return status information about stopped children that have been resumed by delivery of a SIGCONT signal.
+- WNOHANG: If no child specified by pid has yet changed state, then return immediately.
+
+The following figure describe value returned in the status argument of wait() and waitpid(), only the bottom 2 bytes of the value pointed to by status are actually used:
+<p align="center">
+<img src="../asset/Chapter_26/wait_status_value.png" alt="fd" width="600" height="400">
+</p>
+
+The <sys/wait.h> header file defines a standard set of macros that can be used to dissect a wait status value. The list of macros are:  
+- WIFEXITED(status): This macro returns true if the child process exited normally.
+- WIFSIGNALED(status): This macro returns true if the child process was killed by a signal.
+- WIFSTOPPED(status): This macro returns true if the child process was stopped by a signal.
+- WIFCONTINUED(status); This macro returns true if the child was resumed by delivery of SIGCONT.
