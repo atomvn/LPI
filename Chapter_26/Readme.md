@@ -6,11 +6,7 @@ The wait() system call waits for one of the children of the calling process to t
 ```
 #include <sys/wait.h>
 pid_t wait(int *status);
-Return process ID of terminated child, or 01 on error.
-```
-#include <sys/wait.h>
-pid_t wait(int *status);
-Return process ID of terminated child, or -1 on error
+Return process ID of terminated child, or -1 on error.
 ```
 The wait() system call does the following:
 1. If no child of the calling process has yet terminated, the call blocks until one of the children terminates.
