@@ -7,7 +7,7 @@
 
 The following provides an overview of how fork(), exit(), wait(), and execve() are commonly used together.
 <p align="center">
-<img src="../asset/chapter_24/fork_exit_wait_execve.png" alt="fd" width="800" height="700">
+<img src="../asset/chapter_24/fork_exit_wait_execve.png" alt="fd" width="400" height="400">
 </p>
 
 ## 24.2. Creating a new process: fork()
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 
 Duplication of file descriptors during fork:
 <p align="center">
-<img src="../asset/chapter_24/fd_sharing.png" alt="fd" width="600" height="800">
+<img src="../asset/chapter_24/fd_sharing.png" alt="fd" width="400" height="400">
 </p>
 
 ### 24.2.2. Memory semantics of fork()
@@ -135,7 +135,7 @@ Linux use two techniques to avoid wasteful copying:
 
 Description of page tabnles before and after modification of a shared copy-on-write page:
 <p align="center">
-<img src="../asset/chapter_24/copy_on_write_description.png" alt="fd" width="600" height="800">
+<img src="../asset/chapter_24/copy_on_write_description.png" alt="fd" width="400" height="400">
 </p>
 
 ## 24.3. The vfork() system call
