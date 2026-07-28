@@ -165,7 +165,7 @@ increase the size of a file beyond the process’s file size resource limit
 
 The table below describes a range of information about signals on Linux:
 <p align="center">
-<img src="../asset/Chapter_20/signals.png" alt="fd" width="600" height="600">
+<img src="../asset/Chapter_20/signals.png" alt="fd" width="600" height="800">
 </p>
 
 ## 20.3. Changing signal dispositions: signal()
