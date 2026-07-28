@@ -377,7 +377,7 @@ Returns 0 on success, or -1 on error.
 
 ```
 
-## 20.8. Displying signal descriptions
+## 20.8. Displaying signal descriptions
 Each signal has an associated printable description. These descriptions are listed in the array sys_siglist. For example, we can refer to sys_siglist[SIGPIPE] to get the description for SIGPIPE (broken pipe). However, rather than usign the sys_siglist array directly, the strsignal() function is preferable:
 ```
 #define _BSD_SOURCE
