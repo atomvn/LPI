@@ -76,5 +76,41 @@ The pthread_create() fucntion creates a new thread.
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start)(void *), void *arg);
 Return 0 on success, or a positive error number on error.
 ```
-The new thread commences execution by calling the function identified by start with the argument arg (ie, start(arg)). The arg argument is declared as void *, meaning that we can pass a pointer to any type of object to the start function. Typically, arg points to a global or heap variable, but it can also be specified as NULL. If we need to pass multiple arguments to start, then arg can be specified as a pointer to a structure containing the arguments as seperate fields.  
-The return value of start is likewise of type void *, and it can be employed in the same way as the arg argument. 
+The new thread commences execution by calling the function identified by start with the argument arg (ie, start(arg)). The arg argument is declared as void *, meaning that we can pass a pointer to any type of object to the start function. Typically, arg points to a global or heap variable, but it can also be specified as NULL. If we need to pass multiple arguments to start, then arg can be specified as a pointer to a structure containing the arguments as seperate fields. The return value of start is likewise of type void *, and it can be employed in the same way as the arg argument.  
+The thread argument points to a buffer of type pthread_t into which the unique identifier for this thread is copied before pthread_create() returns. This identifier can be used in later Pthreads calls to refer to the thread.   
+The attr argument is a pointer to a pthread_attr_t object that specifies various attributes for the new thread. If attr is specified as NULL, then the thread is created with various default attributes, and this is what normally done.  
+After a call to pthread_create(), a program has no guarantees about which thread will next be scheduled to use the CPU. Programs that implicitly rely on a particular order of scheduling are open to the same sorts of race conditions.
+
+## 29.4. Thread termination
+The execution of a thread terminates in one of the following ways:
+- The thread's start function perform a return specifying a return value for the thread.
+- The thread calls pthread_exit().
+- The thread is canceled using pthread_cancel().
+- Any of the threads call exit(), or the main thread perform a return.
+
+The pthread_exit() function terminates the calling thread, and specifies a return value that can be obtained in another thread by calling pthread_join().
+```
+#include <pthread.h>
+void pthread_exit(void *retval);
+```
+Call pthread_exit() is equivalent to performaing a return in the thread's start fucntion, with the difference that pthread_exit() can be called from any fucntion that has been called by the thread's start fucntion.  
+The retval argument specifies the return value for the thread. The value pointed to by retval should not be located on the thread's stack, since the contents of that stack become undefined on thread termination.
+
+## 29.5. Thread IDs
+Thread's ID is returned to the caller of pthread_create(), and a thread can obtains its own ID using pthread_self().
+```
+#include <pthread.h>
+
+pthread_t pthread_self(void);
+```
+
+The IDs are useful within applications for the following reasons:
+- Various pthreads functions use thread IDs to identify the thread on which they are to act. Examples of such functions include: pthread_join(), pthread_detach(), pthread_cancel(), and pthread_kill().
+- It can be useful to tag dynamic data structures with the ID of a particular thread. This can serve to identify the thread that created or "owns" a data structure.
+
+The pthread_equal() function allows us check whether two thread IDs are the same:
+```
+#include <pthread.h>
+int pthread_equal(pthread_t tl, pthread_t t2);
+Return nonzero value if t1 and t2 are equal, otherwise 0.
+```
