@@ -67,3 +67,14 @@ if (s != 0)
 On Linux, programs that use the Pthreads API must be compiled with the cc-pthread option. The effects of this option include the following:
 - The _REENTRANT preprocessor macro is defined. The causes the declarations of a few reentrant functions to be exposed.
 - The program is linked with the libpthread library. 
+
+## 29.3. Thread creation
+
+The pthread_create() fucntion creates a new thread.
+```
+#include <pthread.h>
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start)(void *), void *arg);
+Return 0 on success, or a positive error number on error.
+```
+The new thread commences execution by calling the function identified by start with the argument arg (ie, start(arg)). The arg argument is declared as void *, meaning that we can pass a pointer to any type of object to the start function. Typically, arg points to a global or heap variable, but it can also be specified as NULL. If we need to pass multiple arguments to start, then arg can be specified as a pointer to a structure containing the arguments as seperate fields.  
+The return value of start is likewise of type void *, and it can be employed in the same way as the arg argument. 
