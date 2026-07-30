@@ -1,5 +1,5 @@
 # Chapter 21: Signals: Signal handler
-## Designing signal handlers
+## 21.1. Designing signal handlers
 - The signal handler sets a global flag and exits.
 - The signal handler performs some type of cleanup and then either terminates the process or uses a nonlocal goto to unwind the stack and return contorl to a predetermined location in the main program.
 
@@ -59,13 +59,14 @@ int main(int argc, char *argv[])
 } 
 ```
 
-**Standard async-signal-safe functions**
+**Standard async-signal-safe functions**  
 A function is async-signal-safe either because it is reentrant or because it is not interruptible by a signal handler. The following table lists the functions that various standards require to be async-signal-safe:
 
 <p align="center">
 <img src="../asset/Chapter_21/async_signal_safe_funcs.png" alt="fd" width="600" height="800">
 </p>
 When writing signal handlers, ensure that the code of the signal handler itself is reentrant and that it calls only sync-signal-safe functions.
+
 
 **Use of errno inside signal handlers**  
 The good practice is to save the value of errno on entry to a signal handler that uses any of the functions in the above table and restore the errno value on exit from the handler, as in the following example:
@@ -79,3 +80,55 @@ void handler(int sig) {
 ```
 
 ### 21.1.3. Global variables and the sig_atomic_t data type
+Reading and writing global variables may involve more than one machine-language instruction, and a signal handler may interrupt the main program in the middle of such an instruction sequence. We say that access to the variable is nonatomic. For this reason, the C language standards specify an integer data type, sig_atomic_t, for which reads and writes are guaranteed to be atomic.
+Thus a global flag variable that is shared between the main program and a signal handler should be declared as follows:  
+```
+volatile sig_atomic_t flag;
+```
+
+## 21.2. Other methods of terminating a signal handler
+There are various other ways of terminating a signal handler:
+- Use _exit() to terminate the process. 
+- Use kill() or raise() to send a signal that kills the process.
+- Perform a nonlocal goto from the signal handler.
+- Use the abort() function to terminate the process with a core dump.
+
+### 21.2.1. Performing a nonlocal goto from a signal handler
+This section desbribes the use of sigsetjmp() and siglongjmp().
+
+### 21.2.2. Terminating a process abnormally: abort()
+The abort() function terminates the calling process and causes it to produce a core dump.
+```
+#include <stdlib.h>
+
+void abort(void);
+```
+The abort() function terminates the calling process by raising a SIGABRT signal. If abort() does successfully terminate the process, then it also flushes and closes stdio streams.
+
+## 21.3. Handling a signal on an alternate stack: sigaltstack()
+The sigaltstack() system call both establishes an alternate signal stack and returns information about any alternate signal stack that is already establishes:
+```
+#include <signal.h>
+itn sigaltstack(const stack_t *sigstack, stack_t *old_sigstack);
+Return 0 on success, or -1 on error.
+```
+
+
+## 21.4. The SA_SIGINFO flag
+Setting the SA_SIGINFO flag when establishing a handler with sigaction() allows the handler to obtain additional information about a signal when it is delivered. In order to obtain this information, we must declare the handler as follows:
+```
+void handler(int sig, siginfo_t *siginfo, void *ucontext);
+```
+The first argument, sig, is the signal number, as for a standard signal handler. The second argument, siginfo, is a structure used to provide the additional information about the signal. 
+In full the signaction structure is define as follow:
+```
+struct sigaction {
+    union {
+        void (*sa_handler)(int);
+        void (*sa_handler)(int, siginfo_t *, void *);
+    } __sigaction_handler;
+    sigset_t sa_mask;
+    int sa_flags;
+    void (*sa_restorer)(void);
+}
+```
