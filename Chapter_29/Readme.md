@@ -114,3 +114,79 @@ The pthread_equal() function allows us check whether two thread IDs are the same
 int pthread_equal(pthread_t tl, pthread_t t2);
 Return nonzero value if t1 and t2 are equal, otherwise 0.
 ```
+
+## 29.6. Joining with a terminated thread
+The pthread_join() function waits for the thread identified by thread to terminate. (If that thread has already terminated, pthread_join() returns immediately).
+
+```
+#include <pthread.h>
+int thread_join(pthread_t thread, void **retval);
+Returns 0 on success, or a positive error number on error.
+```
+If retval is a non-NULL pointer, then it receives a copy of the terminated thread's return value - that is, the value that was specified when the thread performed a return or called pthread_exit().  
+The task that pthread_join() performs for the threads is similar to that performed by waitpid() for processes. However, there are some differences:
+- Threads are peers.
+- There is no way of saying "join with any thread".
+
+Example program:
+```
+#include <pthread.h>
+#include "tlpi_hdr.h"
+
+static void *threadFunc(void *arg) {
+    char *s = (char *)arg;
+    printf("%s", s);
+    return (void *) strlen(s);
+}
+
+int main(int argc, char *argv[]) {
+    pthread_t t1;
+    void *res;
+    int s;
+
+    s = pthread_create(&t1, NULL, threadFunc, "Hello world\n");
+    if (s != 0)
+        errExitEN(s, "pthread_join");
+    
+    printf("Thread returned %ld\n", (long) res);
+    exit(EXIT_SUCCESS);
+}
+```
+
+Output:   
+```
+$ ./simple_thread
+Message form main()
+Hello world
+Thread return 12
+```
+
+## 29.7. Detaching a thread
+Sometimes, we don't care about the thread's return status; we simply want the system to automatically clean up and remove the thread when it terminates. In this case, we can mark the thread as detached, by making a call to pthread_detach() specifying the thread's identifier in thread:
+```
+#include <pthread.h>
+int thread_detach(pthread_t thread);
+Return 0 on success, or a positive error number on error.
+```
+pthread_detach() controls what happens after a thread terminates, not how or when it terminates.
+
+## 29.8. Thread attributes
+pthread_attr_t includes information such as the location and size of the thread's stack, the thread's scheduling policy and prioriry, and whether the thread is joinable or detached.
+
+ ## 29.9. Threads versus processes
+This section briefly consider some of the factors that might influence our choice of whether to implement an application as a group of threads or a group of process, beginning by considering the advantages of a multithread approach:
+- Sharing data between threads is easy. By contrast, sharing data between processes requires more work (e.g., creating a shared memory segment or using a pipe).
+- Thread creation is faster than process creation; context-switch time may be
+lower for threads than for processes.
+
+Using threads can have some disadvantages compared to using processes:
+- When programming with threads, we need to ensure that the functions we call
+are thread-safe or are called in a thread-safe manner. (We describe the concept of thread safety in Section 31.1.) Multiprocess applications don’t need to beconcerned with this.
+- A bug in one thread (e.g., modifying memory via an incorrect pointer) can dam-
+age all of the threads in the process, since they share the same address space and other attributes. By contrast, processes are more isolated from one another.
+- Each thread is competing for use of the finite virtual address space of the host process. In particular, each thread’s stack and thread-specific data (or thread-local storage) consumes a part of the process virtual address space, which is consequently unavailable for other threads. Although the available virtual address space is large (e.g., typically 3 GB on x86-32), this factor may be a significant limitation for processes employing large numbers of threads or threads that require large amounts of memory. By contrast, separate processes can each employ the full range of available virtual memory (subject to the limitations of RAM and swap space).
+
+The following are some other points that may influence out choice of threads versus processes:
+- Dealing with signals in a multithreaded application requires careful design. (As a general principle, it is usually desirable to avoid the use of signals in multithreaded programs.) We say more about threads and signals in Section 33.2.
+- In a multithreaded application, all threads must be running the same program (although perhaps in different functions). In a multiprocess application, different processes can run different programs.
+- Aside from data, threads also share certain other information (e.g., file descriptors, signal dispositions, current working directory, and user and group IDs). This may be an advantage or a disadvantage, depending on the application.
