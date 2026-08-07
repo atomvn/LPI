@@ -135,6 +135,24 @@ PID PPID PGID SID TT COMMAND
 24731 1 24730 24730 ? ./test_become_daemon
 ```
 
+Logic of becomeDaemon() function:
+```
+[Tiến trình C ban đầu]
+           │
+           ├─► 1. Gọi fork() ──────────► Tiến trình cha thoát (Exit), tiến trình con chạy tiếp
+           │
+           ├─► 2. Gọi setsid() ────────► Tạo Session mới, tách khỏi Terminal điều khiển (TTY)
+           │
+           ├─► 3. Gọi chdir("/") ──────► Chuyển Working Directory về Root (tránh khóa USB/Folder)
+           │
+           ├─► 4. Gọi umask(0) ────────► Reset lại File Mode Creation Mask
+           │
+           ├─► 5. Đóng stdin/stdout/stderr ──► Chuyển hướng IO sang syslog (tránh in ra Terminal)
+           │
+           ▼
+ [Hạ cánh thành DAEMON hoàn chỉnh chạy ngầm]
+```
+
 ## 37.3. Guidelines for writing daemons
 
 ## 37.4. Using SIGHUP to reinitialize a daemon
