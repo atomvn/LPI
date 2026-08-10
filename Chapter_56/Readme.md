@@ -124,3 +124,44 @@ performed before the peer application calls connect(), then the accept() blocks
 3. Once a connection has been established, data can be transmitted in both direc-
 tions between the applications (analogous to a two-way telephone conversation) until one of them closes the connection using close(). Communication is performed using the conventional read() and write() system calls or via a number of socket-
 specific system calls (such as send() and recv()) that provide additional functionality.
+
+### 56.5.1. Listening for incoming connections
+The listen() system call marks the stream socket referred to by the file descriptor sockfd as passive. The socket will subsequently be used to accept connections from other (active) sockets.
+```
+#include <sys/socket.h>
+int listen(int sockfd, int backlog);
+Return 0 on success, or -1 on error
+```
+We can't apply listen() to a connected socket - that is, a socket on which a connect() has been successfully performed or a socket returned by a call to accept().
+<p align="center">
+<img src="../asset/Chapter_56/backlog.png" alt="fd" width="400" height="400">
+</p>
+The backlog argument allows us to limit the number of pending connections. 
+
+### 56.5.2. Accepting a connection
+The accept() system call accepts an incoming connection on the listening stream socket reffered to by the file descriptor sockfd. If  there are no pending connections when accrpt() is called, the call blocks until a connection request arrives. 
+```
+#include <sys/socket.h>
+int accept(int sockfd, struct sockadd *addr, socklen_t *addr);
+Return file descriptor on success, or -1 on error
+```
+accept() creates a new socket, and it is this new socket that is connected to the peer socket that performed the connect(). A file descriptor for the connected socket is returned as the function result of the accept() call. The listening (sockfd) remains open, and can be used to accept further connections. A typical server application creates one listening socket, binds it to a well-known address, and then handles all client request by accepting connections via that socket.  
+
+The remaining arguments to accept() return the address of the peer socket. The addr argument points to a structure that is used to return the socket address. The type of this argument depends on the socket domain(as for bind()).
+The addrlen argument is a value-result argument. It points to an integer that,
+prior to the call, must be initialized to the size of the buffer pointed to by addr, so
+that the kernel knows how much space is available to return the socket address.
+Upon return from accept(), this integer is set to indicate the number of bytes of data
+actually copied into the buffer.  
+If we are not interested in the address of the peer socket, then addr and addrlen
+should be specified as NULL and 0, respectively. (If desired, we can retrieve the peer’s
+address later using the getpeername() system call, as described in Section 61.5.)
+
+### 56.5.3. Connecting to a peer socket
+The connect() system call connects the active socket referred to by the file descritor sockfd to the listening socket whose address is specified by addr and addrlen:
+```
+#include <sys/socket.h>
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+Returns 0 on success, or -1 on error
+```
+If connect() fails. The portable method of reattempt the connection is to close the socket, create a new socket and reattempt the connection with the new socket.
