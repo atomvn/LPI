@@ -103,9 +103,7 @@ telephone. In order for two applications to communicate, each of them must
 create a socket.
 
 2. Communication via a stream socket is analogous to a telephone call. One applica-
-tion must connect its socket to another application’s socket before communication
-
-can take place. Two sockets are connected as follows:
+tion must connect its socket to another application’s socket before communication can take place. Two sockets are connected as follows:
 - a) One application calls bind() in order to bind the socket to a well-known
 address, and then calls listen() to notify the kernel of its willingness to
 accept incoming connections. This step is analogous to having a known
@@ -113,9 +111,7 @@ telephone number and ensuring that our telephone is turned on so that
 people can call us.
 
 - b) The other application establishes the connection by calling connect(), speci-
-fying the address of the socket to which the connection is to be made. This
-
-is analogous to dialing someone’s telephone number.
+fying the address of the socket to which the connection is to be made. This is analogous to dialing someone’s telephone number.
 - c) The application that called listen() then accepts the connection using accept().
 This is analogous to picking up the telephone when it rings. If the accept() is
 performed before the peer application calls connect(), then the accept() blocks
