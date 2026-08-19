@@ -80,13 +80,27 @@ tion 5.3). These flags are sometimes simply called the file status flags.
 
 ### 4.3.2. Errors from open()
 If an error occurs while trying to open the file, open() returns -1, and errno identifies the cause of the error. The following are some possible errors that can occur:
-- EACCES
-- EISDIR
-- EMFILE
-- ENFILE
-- ENOENT
-- EROFS
-- ETXTBSY
+- EACCES: The file permissions don’t allow the calling process to open the file in the
+mode specified by flags. Alternatively, because of directory permissions,
+the file could not be accessed, or the file did not exist and could not be
+created.
+
+- EISDIR: The specified file is a directory, and the caller attempted to open it for writ-
+ing. This isn’t allowed. (On the other hand, there are occasions when it can
+be useful to open a directory for reading. We consider an example in
+Section 18.11.)
+- EMFILE: The process resource limit on the number of open file descriptors has
+been reached (RLIMIT_NOFILE, described in Section 36.3).
+- ENFILE The system-wide limit on the number of open files has been reached.
+- ENOENT: The specified file doesn’t exist, and O_CREAT was not specified, or O_CREAT
+was specified, and one of the directories in pathname doesn’t exist or is a
+symbolic link pointing to a nonexistent pathname (a dangling link).
+- EROFS: The specified file is on a read-only file system and the caller tried to open it
+for writing.
+- ETXTBSY: The specified file is an executable file (a program) that is currently execut-
+ing. It is not permitted to modify (i.e., open for writing) the executable file
+associated with a running program. (We must first terminate the program
+in order to be able to modify the executable file.)
 
 ### 4.3.3. The create() system call
 The create() system call was used to create and open a new file.
@@ -95,3 +109,113 @@ The create() system call was used to create and open a new file.
 int creat(const char* pathname, mode_t mode);
 REturns file descriptor, or -1 on error.
 ```
+Calling creat() is equivalent to the following open() call:
+```
+fd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC, mode);
+```
+
+## 4.4. Reading from a file: read()
+The read() system call reads data from the open file referred to by the descriptor fd.
+```
+#include <unistd.h>
+ssize_t read(int fd, void *buffer, size_t count);
+
+Returns number of bytes read, 0 on EOF, or –1 on error
+```
+The count argument specifies the maximum number of bytes to read. (The size_t data type is an unsigned integer type.) The buffer argument supplies the address of the memory buffer into which the input data is to be placed. This buffer must be at least count bytes long.  
+A successful call to read() returns the number of bytes actually read, or 0 if end-of-file is encountered. On error, the usual –1 is returned. The ssize_t data type is a signed integer type used to hold a byte count or a –1 error indication.
+A call to read() may read less than the requested number of bytes. For a regular file, the probable reason for this is that we were close to the end of the file.  
+When read() is applied to other types of files—such as pipes, FIFOs, sockets, or terminals—there are also various circumstances where it may read fewer bytes than requested. For example, by default, a read() from a terminal reads characters only up to the next newline (\n) character. We consider these cases when we cover other file types in subsequent chapters.  
+Using read() to input a series of characters from, say, a terminal, we might expect the following code to work:
+```
+#define MAX_READ 20
+char buffer[MAX_READ];
+
+if (read(STDIN_FILENO, buffer, MAX_READ) == -1)
+    errExit("read");
+printf("The input data was: %s\n", buffer);
+```
+The output from this piece of code is likely to be strange, since it will probably include characters in addition to the string actually entered. This is because read() doesn’t place a terminating null byte at the end of the string that printf() is being asked to print. A moment’s reflection leads us to realize that this must be so, since read() can be used to read any sequence of bytes from a file. In some cases, this input might be text, but in other cases, the input might be binary integers or C structures in binary form. There is no way for read() to tell the difference, and so it can’t attend to the C convention of null terminating character strings. If a terminating null byte is required at the end of the input buffer, we must put it there explicitly:
+```
+char buffer[MAX_READ + 1];
+ssize_t numRead;
+
+numRead = read(STDIN_FILENO, buffer, MAX_READ);
+if (numRead == -1)
+    errExit("read");
+buffer[numRead] = '\0';
+printf("The input data was: %s\n", buffer);
+```
+
+## 4.5. Writing to a file: write()
+The write() system call writes data to an open file.
+```
+#include <unistd.h>
+ssize_t write(int fd, void *buffer, size_t count);
+
+Returns number of bytes written, or –1 on error
+```
+The arguments to write() are similar to those for read(): buffer is the address of the data to be written; count is the number of bytes to write from buffer; and fd is a file descriptor referring to the file to which data is to be written.  
+
+On success, write() returns the number of bytes actually written; this may be less than count. For a disk file, possible reasons for such a partial write are that the disk was filled or that the process resource limit on file sizes was reached. (The rele- vant limit is RLIMIT_FSIZE, described in Section 36.3.)  
+
+When performing I/O on a disk file, a successful return from write() doesn’t guarantee that the data has been transferred to disk, because the kernel performs buffering of disk I/O in order to reduce disk activity and expedite write() calls. We consider the details in Chapter 13.
+
+### 3.4.6. Closing a file: close()
+The close() system call closes an open file descriptor, freeing it for subsequent reuse by the process. When a process terminates, all of its open file descriptors are auto-
+matically closed.
+```
+#include <unistd.h>
+int close(int fd);
+
+Returns 0 on success, or –1 on error
+```
+Just like every other system call, a call to close() should be bracketed with error-checking code, such as the following:
+```
+if (close(fd) == -1)
+    errExit("close");
+```
+This catches errors such as attempting to close an unopened file descriptor or close the same file descriptor twice, and catches error conditions that a specific file sys-
+tem may diagnose during a close operation.
+
+### 3.4.7. Changing the file offset: lseek()
+For each open file, the kernel records a file offset, sometimes also called the read-write offset or pointer. This is the location in the file at which the next read() or write() will commence. The file offset is expressed as an ordinal byte position relative to the start of the file. The first byte of the file is at offset 0.  
+
+The lseek() system call adjusts the file offset of the open file referred to by the file descriptor fd, according to the values specified in offset and whence.
+```
+#include <unistd.h>
+off_t lseek(int fd, off_t offset, int whence);
+
+Returns new file offset if successful, or –1 on error
+```
+The offset argument specifies a value in bytes. (The off_t data type is a signed integer type specified by SUSv3.) The whence argument indicates the base point from which offset is to be interpreted, and is one of the following values:
+- SEEK_SET: The file offset is set offset bytes from the beginning of the file.
+- SEEK_CUR: The file offset is adjusted by offset bytes relative to the current file offset.
+- SEEK_END: The file offset is set to the size of the file plus offset. In other words, offset is interpreted with respect to the next byte after the last byte of the file.
+
+<figure align="center">
+    <img src="../asset/Chapter_4/whence.png" alt="fd" width="400" height="150">
+</figure>
+
+If whence is SEEK_CUR or SEEK_END, offset may be negative or positive; for SEEK_SET, offset must be nonnegative.  
+The return value from a successful lseek() is the new file offset. The following
+call retrieves the current location of the file offset without changing it:
+```
+curr = lseek(fd, 0, SEEK_CUR);
+```
+Here are some other examples of lseek() calls, along with comments indicating
+where the file offset is moved to:
+```
+lseek(fd, 0, SEEK_SET); /* Start of file */
+lseek(fd, 0, SEEK_END); /* Next byte after the end of the file */
+lseek(fd, -1, SEEK_END); /* Last byte of file */
+lseek(fd, -10, SEEK_CUR); /* Ten bytes prior to current location */
+lseek(fd, 10000, SEEK_END); /* 10001 bytes past last byte of file */
+```
+Calling lseek() simply adjusts the kernel’s record of the file offset associated with a
+file descriptor. It does not cause any physical device access.  
+
+We can’t apply lseek() to all types of files. Applying lseek() to a pipe, FIFO,
+socket, or terminal is not permitted; lseek() fails, with errno set to ESPIPE. On the
+other hand, it is possible to apply lseek() to devices where it is sensible to do so. For
+example, it is possible to seek to a specified location on a disk or tape device.
