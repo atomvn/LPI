@@ -5,7 +5,7 @@ A socket is created using the socket() system call, which returns a file descrip
 fd = socket(domain, type, protocol);
 ```
 For all applications in this book, protocol is always specified as 0.
-**Communication domains**
+**`Communication domains`**  
 Communication domain determines:
 - the method of communication (ie.., the format of a socket "address")
 - the range of communication(ie.., either betwwen applications on the same host or betwwen applications on different hosts connected via a network.)
@@ -20,10 +20,10 @@ Modern operation systems support at least the following domains:
 <img src="../asset/Chapter_56/domain.png" alt="fd" width="400" height="300">
 </p>
  
-**Socket types**
+**`Socket types`**  
 In the Internet domain, datagram sockets employ the User Datagram Protocol (UDP), and stream sockets (usually) employ the Transmission Control Protoccol (TCP). Instead of using the terms Internet domain datagram socket and Internet domain stream socket, we just use the term UDP socket and TCP socket, respectively.
 
-**Socket system calls**
+**`Socket system calls`**  
 - The socket() system call creates a new socket.
 - The bind() system call binds a socket to an address. Usually, a server employs
 this call to bind its socket to a well-known address so that clients can locate
@@ -31,8 +31,7 @@ the socket.
 - The listen() system call allows a stream socket to accept incoming connections
 from other sockets.
 
-- The accept() system call accepts a connection from a peer application on a listen-
-ing stream socket, and optionally returns the address of the peer socket.
+- The accept() system call accepts a connection from a peer application on a listening stream socket, and optionally returns the address of the peer socket.
 
 - The connect() system call establishes a connection with another socket.
 
@@ -110,8 +109,7 @@ accept incoming connections. This step is analogous to having a known
 telephone number and ensuring that our telephone is turned on so that
 people can call us.
 
-- b) The other application establishes the connection by calling connect(), speci-
-fying the address of the socket to which the connection is to be made. This is analogous to dialing someone’s telephone number.
+- b) The other application establishes the connection by calling connect(), specifying the address of the socket to which the connection is to be made. This is analogous to dialing someone’s telephone number.
 - c) The application that called listen() then accepts the connection using accept().
 This is analogous to picking up the telephone when it rings. If the accept() is
 performed before the peer application calls connect(), then the accept() blocks
