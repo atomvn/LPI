@@ -159,3 +159,48 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 Returns 0 on success, or -1 on error
 ```
 If connect() fails. The portable method of reattempt the connection is to close the socket, create a new socket and reattempt the connection with the new socket.
+
+### 56.5.4. I/O on stream sockets
+A pair of connected stream sockets provides a bidirectional communication channel between the two endpoins. Figure 56-3 shows what this looks like in the UNIX domain:
+<p align="center">
+<img src="../asset/Chapter_56/I_O.png" alt="fd" width="400" height="100">
+</p>
+
+### 56.5.5. Connection termination: close()
+The usual way of terminating a stream socket connection is to call close(). If multiple file descriptors refer to the same socket, then the connection is terminated when all of the descriptors are closed. 
+
+## 56.6. Datagram sockets
+The operation of datagram sockets can be explained by analogy with the postal system:
+1. The socket() system call is the equipvalent of setting up a mailbox. Each application that wants to send or receive datagrams creates a datagram socket using socket().
+2. In order to allow another application to send it datagrams(letters), an application uses bind() to bind its socket to a well-known address. Typically, a server binds its socket to a well-known address, and a client initiates communication by sending a datagram to that address.
+3. To send a datagram, an application calls sendto(), which takes as one of its arguments the address of the socket to which the datagram is to be sent. 
+4. In order to receive a datagram, an application calls recvfrom(), which may block if no datagram has yet arrived. Because recvfrom() allows us to obtain the address of the sender, we can send a reply if desired. 
+5. When the socket is no longer needed, the application closes it using close().
+<p align="center">
+<img src="../asset/Chapter_56/datagram_socket.png" alt="fd" width="600" height="400">
+</p>
+
+### 56.6.1. Exchanging datagrams: recvfrom() and sendto()
+The recvfrom() and sendto() system calls receive and send datagrams on a datagram socket.
+```
+#include <sys/socket.h>
+ssize_t recvfrom(int sockfd, void *buffer, size_t length, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+
+Returns number of bytes received, 0 on EOF, or –1 on error
+
+ssize_t sendto(int sockfd, const void *buffer, size_t length, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+
+Returns number of bytes sent, or –1 on error
+
+```
+The return value and the first three arguments to these system calls are the same as
+for read() and write(). The fourth argument, flags, is a bit mask controlling socket-specific I/O features. For recvfrom(), the src_addr and addrlen arguments return the address of the
+remote socket used to send the datagram. Prior to the call, addrlen should be initialized to the size of the structure pointed to by src_addr; upon return, it contains the number of bytes actually written to this structure.
+
+### 56.6.2. Using conenct() with datagram sockets
+Even though datagram sockets are connectionless, the connect() system call serves a
+purpose when applied to datagram sockets. Calling connect() on a datagram socket
+causes the kernel to record a particular address as this socket’s peer. The term
+connected datagram socket is applied to such a socket. The term unconnected datagram
+socket is applied to a datagram socket on which connect() has not been called (i.e.,
+the default for a new datagram socket).
